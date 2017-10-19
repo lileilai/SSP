@@ -1,0 +1,12 @@
+[2017-10-15 23.03.45]	Starting...
+[2017-10-15 23.03.45]		[Dataset]	FB15k
+[2017-10-15 23.03.45]	LinkPredictionHead
+[2017-10-15 23.03.45]		[Name]	TransE
+[2017-10-15 23.03.45]		[Dimension]	50
+[2017-10-15 23.03.45]		[Learning Rate]	0.001
+[2017-10-15 23.03.45]		[Training Threshold]	1.8
+[2017-10-15 23.03.45]		[Name]	SemanticModel.TransE
+[2017-10-15 23.03.45]		[Dimension]	50
+[2017-10-15 23.03.45]		[Learning Rate]	0.001
+[2017-10-15 23.03.45]		[Training Threshold]	1.8
+[2017-10-15 23.03.45]		[Topic Model]	LSI
