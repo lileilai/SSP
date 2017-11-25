@@ -3,6 +3,7 @@
 #include "ModelConfig.hpp"
 #include "DataModel.hpp"
 #include <boost/progress.hpp>
+#include<pthread.h>
 
 using namespace std;
 using namespace arma;
@@ -19,6 +20,8 @@ public:
 
 public:
 	int	epos;
+	int threadNum=16;
+	int batchSize;
 
 public:
 	Model(const Dataset& dataset,
@@ -65,17 +68,20 @@ public:
 public:
 	virtual double prob_triplets(const pair<pair<int, int>, int>& triplet) = 0;
 	virtual void train_triplet(const pair<pair<int, int>, int>& triplet) = 0;
-
+	virtual void train_triplet_transG(){};
 public:
 	virtual void train(bool last_time = false)
 	{
 		++epos;
 
 #pragma omp parallel for
+
+
 		for (auto i = data_model.data_train.begin(); i != data_model.data_train.end(); ++i)
 		{
 			train_triplet(*i);
 		}
+		//train_triplet_transG();
 	}
 
 	void run(int total_epos)
@@ -223,6 +229,10 @@ public:
 		double arr_mean[20] = { 0 };
 		double arr_total[5] = { 0 };
 
+		ofstream fout;
+		string path1="./res.txt";
+		fout.open(path1.c_str(),ios::out|ios_base::trunc);
+
 		for (auto i = data_model.data_test_true.begin(); i != data_model.data_test_true.end(); ++i)
 		{
 			++arr_total[data_model.relation_type[i->second]];
@@ -299,8 +309,16 @@ public:
 				if (frmean < hit_rank)
 					++fhits;
 			}
+			int h_id=(*i).first.first;
+			int r_id=(*i).second;
+			int t_id=(*i).first.second;
+			fout<<"head: "<<data_model.entity_id_to_name[h_id]<<"relation: "<<
+					data_model.entity_id_to_name[r_id]<<"tail: "<<
+					data_model.entity_id_to_name[t_id];
+			fout<<"rmean: "<<rmean<<"fmean: "<<fmean<<"rhits: "<<hits<<"fhits: "<<fhits;
+			fout<<"\n";
 		}
-
+		fout.close();
 		std::cout << endl;
 		for (auto i = 1; i <= 4; ++i)
 		{
