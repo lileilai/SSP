@@ -1,0 +1,7 @@
+[2017-11-29 15.17.40]	Starting...
+[2017-11-29 15.17.40]		[Dataset]	WN11
+[2017-11-29 15.17.40]	LinkPredictionTail
+[2017-11-29 15.17.40]		[Name]	TransE
+[2017-11-29 15.17.40]		[Dimension]	100
+[2017-11-29 15.17.40]		[Learning Rate]	0.001
+[2017-11-29 15.17.40]		[Training Threshold]	1

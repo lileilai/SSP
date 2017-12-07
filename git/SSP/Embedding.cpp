@@ -32,10 +32,33 @@ int main(int argc, char* argv[])
 	}*/
 	Dataset FB15k("FB15k", "./data/FB15k/", "train.txt", "valid.txt", "test.txt", false);
 	
-	model=new SemanticModel_Joint(FB15k,LinkPredictionHead,"./report/","./data/FB15k_description/FB15k_mid2description.txt",50,0.001,1.8,0.2,0.1);
+	/*model=new SemanticModel_Joint(FB15k,LinkPredictionTail,"./report/","./data/FB15k_description/FB15k_mid2description.txt",50,0.001,1.8,0.2,0.1);
 	model->run(5000);
+	model->test();*/
+
+	model=new SemanticModel(FB15k,LinkPredictionTail,"./report/","./semantic_v1.txt",50,0.001,1.8,0.2,0.1);
+	model->run(8000);
 	model->test();
 	delete model;
+
+	/*
+	Dataset FB15k("FB15k", "./data/FB15k/", "train.txt", "valid.txt", "test.txt", false);
+	model=new TransG(FB15k,LinkPredictionTail,"./report/",400,0.0015,3.0,3,0.1);
+	model->run(1000);
+	model->test();
+	delete model;*/
+
+	/*Dataset FB15k("FB15k", "./data/FB15k/", "train.txt", "valid.txt", "test.txt", false);
+	model=new MFactorE(FB15k,LinkPredictionTail,"./report/,",3,0.0004,2.5,0.04,10);
+	model->run(2000);
+	model->test();
+	delete model;*/
+
+	/*Dataset FB15k("FB15k", "./data/FB15k/", "train.txt", "valid.txt", "test.txt", false);
+	model=new TransE(FB15k,LinkPredictionTail,"./report/",100,0.001,1);
+	model->run(1000);
+	model->test();
+	delete model;*/
 
 	return 0;
 }

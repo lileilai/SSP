@@ -1,0 +1,11 @@
+[2017-11-25 20.04.12]	Starting...
+[2017-11-25 20.04.12]		[Dataset]	FB15k
+[2017-11-25 20.04.12]	LinkPredictionTail
+[2017-11-25 20.04.12]		[Name]	TransM
+[2017-11-25 20.04.12]		[Dimension]	400
+[2017-11-25 20.04.12]		[Learning Rate]	0.0015
+[2017-11-25 20.04.12]		[Training Threshold]	3
+[2017-11-25 20.04.12]		[Cluster Counts]	3
+[2017-11-25 20.04.12]		[CRP Factor]	0.1
+[2017-11-25 20.04.12]		[Weight Normalized]	True
+[2017-11-25 20.04.12]		[Single or Total]	False

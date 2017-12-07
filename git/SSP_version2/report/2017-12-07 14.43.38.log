@@ -1,0 +1,13 @@
+[2017-12-07 14.43.38]	Starting...
+[2017-12-07 14.43.38]		[Dataset]	FB15k
+[2017-12-07 14.43.38]	LinkPredictionTail
+[2017-12-07 14.43.38]		[Name]	TransE
+[2017-12-07 14.43.38]		[Dimension]	50
+[2017-12-07 14.43.38]		[Learning Rate]	0.001
+[2017-12-07 14.43.38]		[Training Threshold]	1.8
+[2017-12-07 14.43.38]		[Name]	SemanticModel.TransE
+[2017-12-07 14.43.38]		[Dimension]	50
+[2017-12-07 14.43.38]		[Learning Rate]	0.001
+[2017-12-07 14.43.38]		[Training Threshold]	1.8
+[2017-12-07 14.43.38]		[Topic Model]	LSI
+[2017-12-07 14.43.38]		[Balance]	0.1

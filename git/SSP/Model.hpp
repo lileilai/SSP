@@ -4,6 +4,9 @@
 #include "DataModel.hpp"
 #include <boost/progress.hpp>
 #include<pthread.h>
+#include<functional>
+#include<thread>
+#include <atomic>
 
 using namespace std;
 using namespace arma;
@@ -22,6 +25,7 @@ public:
 	int	epos;
 	int threadNum=16;
 	int batchSize;
+	thread **th=new thread*[threadNum];
 
 public:
 	Model(const Dataset& dataset,
@@ -68,20 +72,44 @@ public:
 public:
 	virtual double prob_triplets(const pair<pair<int, int>, int>& triplet) = 0;
 	virtual void train_triplet(const pair<pair<int, int>, int>& triplet) = 0;
-	virtual void train_triplet_transG(){};
+	virtual void train_batch(){};
+	virtual void out_transe(){};
 public:
 	virtual void train(bool last_time = false)
 	{
 		++epos;
 
 #pragma omp parallel for
+		int nbatchs=100;
+		batchSize=data_model.data_train.size()/nbatchs/threadNum;
+		pair<pair<int, int>,int> triplet;
+		train_batch();
+		for(int i=0;i<nbatchs;i++){
+			//thread thr[threadNum];
+			for(int k=0;k<threadNum;k++)
+				th[k]=new thread(
+					[this]()->void{
+							this->train_batch();
+					}
+
+				);
+			for(int m=0;m<threadNum;m++)
+				th[m]->join();
+
+			/*for(int m=0;m<threadNum;m++)
+				delete th[m];*/
 
 
-		for (auto i = data_model.data_train.begin(); i != data_model.data_train.end(); ++i)
+		}
+		/*for (auto i = data_model.data_train.begin(); i != data_model.data_train.end(); ++i)
 		{
 			train_triplet(*i);
-		}
-		//train_triplet_transG();
+		}*/
+
+	}
+	void sample(pair<pair<int, int>,int>& triplet){
+		int index=rand_max(data_model.data_train.size());
+		triplet=data_model.data_train[index];
 	}
 
 	void run(int total_epos)
@@ -99,8 +127,10 @@ public:
 				test_triplet_classification();
 		}
 
+		out_transe();
 		train(true);
 	}
+
 
 public:
 	double		best_triplet_result;
@@ -108,7 +138,13 @@ public:
 	double		best_link_hitatten;
 	double		best_link_fmean;
 	double		best_link_fhitatten;
-
+	int rand_max(int x)
+	{
+		int res = (rand()*rand())%x;
+		while (res<0)
+			res+=x;
+		return res;
+	}
 	void reset()
 	{
 		best_triplet_result = 0;
@@ -128,7 +164,7 @@ public:
 		best_link_fhitatten = 0;
 
 		if (task_type == LinkPredictionHead || task_type == LinkPredictionTail || task_type == LinkPredictionRelation)
-			test_link_prediction(hit_rank);
+			test_link_prediction1(hit_rank);
 		if (task_type == LinkPredictionHeadZeroShot || task_type == LinkPredictionTailZeroShot || task_type == LinkPredictionRelationZeroShot)
 			test_link_prediction_zeroshot(hit_rank);
 		else
@@ -312,11 +348,11 @@ public:
 			int h_id=(*i).first.first;
 			int r_id=(*i).second;
 			int t_id=(*i).first.second;
-			fout<<"head: "<<data_model.entity_id_to_name[h_id]<<"relation: "<<
-					data_model.entity_id_to_name[r_id]<<"tail: "<<
-					data_model.entity_id_to_name[t_id];
-			fout<<"rmean: "<<rmean<<"fmean: "<<fmean<<"rhits: "<<hits<<"fhits: "<<fhits;
-			fout<<"\n";
+			fout<<"head: "<<data_model.entity_id_to_name[h_id]<<" relation: "<<
+					data_model.relation_id_to_name[r_id]<<" tail: "<<
+					data_model.entity_id_to_name[t_id]<<endl;
+			fout<<"rmean: "<<rmean<<" fmean: "<<fmean<<" rhits: "<<hits<<" fhits: "<<fhits;
+			fout<<endl;
 		}
 		fout.close();
 		std::cout << endl;
@@ -348,7 +384,130 @@ public:
 
 		std::cout.flush();
 	}
+	void test_link_prediction1(int hit_rank = 10, const int part = 0){
 
+		atomic<double> mean;
+		atomic<double> hits;
+		atomic<double> fmean;
+		atomic<double> fhits;
+		atomic<double> rmrr;
+		atomic<double> fmrr;
+		atomic<int> cnt;
+		mean.store(0);hits.store(0);fmean.store(0);
+		fhits.store(0);rmrr.store(0);fmrr.store(0);
+		cnt.store(0);
+		std::function<void(int,int)> func=[&](int s,int t)->void{
+					for(int k=s;k<t;k++){
+						if(k%100==0)
+							cout<<"the "<<k<<"-th"<<endl;
+						pair<pair<int, int>, int> t = data_model.data_test_true[k];
+						atomic<double> frmean;
+						atomic<double> rmean;
+						frmean.store(0);
+						rmean.store(0);
+						double score_i = prob_triplets(t);
+
+						if (task_type == LinkPredictionRelation || part == 2)
+						{
+							for (auto j = 0; j != data_model.set_relation.size(); ++j)
+							{
+								t.second = j;
+
+								if (score_i >= prob_triplets(t))
+									continue;
+
+								rmean=rmean+1;
+
+								if (data_model.check_data_all.find(t) == data_model.check_data_all.end())
+									frmean=frmean+1;
+							}
+						}
+						else
+						{
+							for (auto j = 0; j != data_model.set_entity.size(); ++j)
+							{
+								if (task_type == LinkPredictionHead || part == 1)
+									t.first.first = j;
+								else
+									t.first.second = j;
+
+								if (score_i >= prob_triplets(t))
+									continue;
+
+								rmean=rmean+1;
+
+								if (data_model.check_data_all.find(t) == data_model.check_data_all.end())
+								{
+									frmean=frmean+1;
+									//if (frmean > hit_rank)
+									//	break;
+								}
+							}
+						}
+
+			#pragma omp critical
+						{
+							/*if (frmean < hit_rank)
+								++arr_mean[data_model.relation_type[i->second]];
+							 	 */
+							mean =mean+ rmean;
+							fmean =fmean+ frmean;
+							rmrr =rmrr+ 1.0 / (rmean + 1);
+							fmrr =fmrr+ 1.0 / (frmean + 1);
+
+							if (rmean < hit_rank)
+								hits=hits+1;
+							if (frmean < hit_rank)
+								fhits=fhits+1;
+
+					}
+
+			}
+		};
+		cout<<"~~";
+		int testThreadNum=12;
+		std::thread *threads[testThreadNum];
+		cout<<"~~";
+		double total = data_model.data_test_true.size();
+		int psize=total/testThreadNum;
+		int begin=0,end=psize;
+		for(int i=0;i<testThreadNum-1;i++){
+
+			threads[i]=new thread(func,begin,end);
+			begin=end;
+			end+=psize;
+		}
+		threads[testThreadNum-1]=new thread(func,end,total);
+
+		for(int i=0;i<testThreadNum;i++)
+			threads[i]->join();
+
+		for(int i=0;i<testThreadNum;i++)
+			delete threads[i];
+
+		logging.record();
+
+		best_link_mean = min(best_link_mean, mean / total);
+		best_link_hitatten = max(best_link_hitatten, hits / total);
+		best_link_fmean = min(best_link_fmean, fmean / total);
+		best_link_fhitatten = max(best_link_fhitatten, fhits / total);
+
+		std::cout << "Raw.BestMEANS = " << best_link_mean << endl;
+		std::cout << "Raw.BestMRR = " << rmrr / total << endl;
+		std::cout << "Raw.BestHITS = " << best_link_hitatten << endl;
+		logging.record() << "Raw.BestMEANS = " << best_link_mean;
+		logging.record() << "Raw.BestMRR = " << rmrr / total;
+		logging.record() << "Raw.BestHITS = " << best_link_hitatten;
+
+		std::cout << "Filter.BestMEANS = " << best_link_fmean << endl;
+		std::cout << "Filter.BestMRR= " << fmrr / total << endl;
+		std::cout << "Filter.BestHITS = " << best_link_fhitatten << endl;
+		logging.record() << "Filter.BestMEANS = " << best_link_fmean;
+		logging.record() << "Filter.BestMRR= " << fmrr / total;
+		logging.record() << "Filter.BestHITS = " << best_link_fhitatten;
+
+		std::cout.flush();
+	}
 public:
 	void test_link_prediction_zeroshot(int hit_rank = 10, const int part = 0)
 	{
