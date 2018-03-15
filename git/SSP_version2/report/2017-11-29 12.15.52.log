@@ -1,7 +1,0 @@
-[2017-11-29 12.15.52]	Starting...
-[2017-11-29 12.15.52]		[Dataset]	FB15k
-[2017-11-29 12.15.52]	LinkPredictionTail
-[2017-11-29 12.15.52]		[Name]	TransE
-[2017-11-29 12.15.52]		[Dimension]	100
-[2017-11-29 12.15.52]		[Learning Rate]	0.0001
-[2017-11-29 12.15.52]		[Training Threshold]	1
